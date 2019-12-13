@@ -2,24 +2,22 @@
 # -*- coding: utf-8 -*-
 #
 
-from os.path import dirname, join
+import codecs
+import os
+
 from setuptools import (
     find_packages,
     setup,
 )
 
-try: # for pip >= 10
-    from pip._internal.req import parse_requirements
-except ImportError: # for pip <= 9.0.3
-    from pip.req import parse_requirements
 
+def read(fname):
+    return codecs.open(os.path.join(os.path.dirname(__file__), fname)).read()
 
-with open(join(dirname(__file__), 'funcat/VERSION.txt'), 'rb') as f:
-    version = f.read().decode('ascii').strip()
 
 setup(
     name='funcat',
-    version=version,
+    version=read('funcat/VERSION.txt'),
     description='funcat',
     packages=find_packages(exclude=[]),
     author='Hua Liang',
@@ -27,7 +25,7 @@ setup(
     author_email='et@everet.org',
     license='Apache License v2',
     package_data={'': ['*.*']},
-    install_requires=[str(ir.req) for ir in parse_requirements("requirements.txt", session=False)],
+    install_requires=read("requirements.txt"),
     zip_safe=False,
     classifiers=[
         'Programming Language :: Python',
