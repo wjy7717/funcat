@@ -6,6 +6,7 @@ import os
 import datetime
 
 import numpy as np
+import pandas
 from numpy.lib import recfunctions as rfn
 
 from .backend import DataBackend
@@ -31,10 +32,19 @@ class RQAlphaDataBackend(DataBackend):
         # import warnings
         # warnings.simplefilter(action="ignore", category=FutureWarning)
 
+        from rqalpha.data.bar_dict_price_board import BarDictPriceBoard
         from rqalpha.data.base_data_source import BaseDataSource
         from rqalpha.data.data_proxy import DataProxy
+        from rqalpha.environment import Environment
+        from rqalpha.utils import RqAttrDict
 
-        self.data_proxy = DataProxy(BaseDataSource(os.path.expanduser(bundle_path)))
+        env = Environment(RqAttrDict({}))
+        env.calendar_dt = pandas.Timestamp(datetime.datetime.now().date()).to_pydatetime()
+        default_bundle_path = os.path.abspath(os.path.expanduser(bundle_path))
+        data_source = BaseDataSource(default_bundle_path, {})
+        price_board = BarDictPriceBoard()
+        env.data_proxy = DataProxy(data_source, price_board)
+        self.env = env
 
     def get_price(self, order_book_id, start, end, freq):
         """
@@ -51,7 +61,7 @@ class RQAlphaDataBackend(DataBackend):
 
         bar_count = (end - start).days
 
-        bars = self.data_proxy.history_bars(
+        bars = self.env.data_proxy.history_bars(
             order_book_id, bar_count, freq, field=None,
             dt=datetime.datetime.combine(end, datetime.time(23, 59, 59)))
 
@@ -65,7 +75,7 @@ class RQAlphaDataBackend(DataBackend):
         """获取所有的
         """
         import pandas as pd
-        insts = self.data_proxy.all_instruments("CS")
+        insts = self.env.data_proxy.all_instruments("CS")
         if isinstance(insts, pd.DataFrame):
             # for old version of RQAlpha
             return sorted(insts.order_book_id.tolist())
